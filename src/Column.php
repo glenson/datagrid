@@ -374,6 +374,16 @@ class Column {
 		return 'f[' . $this->getKey() . ']' . ($this->hasFilterMany() ? '[]' : null);
 	}
 
+
+	/**
+	 * Get filter name
+	 *
+	 * @return string
+	 */
+	public function getFilterNameById($id) {
+		return $id.'[' . $this->getKey() . ']' . ($this->hasFilterMany() ? '[]' : null);
+	}
+
 	/*
 	|--------------------------------------------------------------------------
 	| Action

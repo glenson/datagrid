@@ -3,10 +3,11 @@
 use Aginev\Datagrid\Exceptions\ColumnException;
 use Aginev\Datagrid\Exceptions\DataException;
 use Aginev\Datagrid\Rows\Row;
-use Illuminate\Contracts\Pagination\Paginator;
-use Illuminate\Support\Facades\Request;
-use Illuminate\Support\Facades\View;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 
 /**
  * Description of Datagrid
@@ -593,17 +594,77 @@ class Datagrid {
 		return $result;
 	}
 
-    /**
-     * Current route link
-     *
-     * @param array $get_params
-     * @return string
-     */
-    public static function getCurrentRouteLink($get_params = []) {
-        $current_action = \Illuminate\Support\Facades\Route::current()->getAction();
-        $controller = '\\' . $current_action['controller'];
-        $parameters = \Illuminate\Support\Facades\Route::current()->parameters();
+	/**
+	* Current route link
+	*
+	* @param array $get_params
+	* @return string
+	*/
+	public static function getCurrentRouteLink($get_params = []) {
+		$current_action = \Illuminate\Support\Facades\Route::current()->getAction();
+		$controller = '\\' . $current_action['controller'];
+		$parameters = \Illuminate\Support\Facades\Route::current()->parameters();
 
-        return action($controller, $parameters) . ($get_params ? '?' . http_build_query($get_params) : '');
-    }
+		return action($controller, $parameters) . ($get_params ? '?' . http_build_query($get_params) : '');
+	}
+	
+	public static function filterData($data, $paramList) {    
+		foreach ($paramList as $k => $value)
+		{
+			if(!in_array($k, ['order_by','order_dir','page','action'], true)){
+				$filterItem = $paramList[$k];
+				$data = $data->filter(function ($item, $key) use ($filterItem, $k) {
+					return empty($filterItem) ? true : (strpos(strtolower($item->{ $k }), strtolower($filterItem)) !== false);
+				});
+			}
+		}
+
+		if(isset($paramList['order_dir']))
+			$sort = ($paramList['order_dir'] == "DESC") ? 'sortByDesc' : 'sortBy';
+		if(isset($paramList['order_by']))
+			$data = $data->{ $sort }($paramList['order_by']);
+		return $data;
+	}
+
+	public static function paginate($items, $perPage = 15, $page = null, $options = [])
+	{
+		$page = $page ?: (Paginator::resolveCurrentPage() ?: 1);
+		$items = $items instanceof Collection ? $items : Collection::make($items);
+		return new LengthAwarePaginator($items->forPage($page, $perPage), $items->count(), $perPage, $page, $options);
+	}
+
+	public static function currentUri($get_params = [], $unset_params = []) {
+		$current_action = \Illuminate\Support\Facades\Route::current()->getAction();
+		$controller = '\\' . $current_action['controller'];
+		$parameters = \Illuminate\Support\Facades\Route::current()->parameters();
+		parse_str($_SERVER['QUERY_STRING'], $param); 
+		foreach(array_keys($unset_params) as $key => $value) {
+			if(is_array($value)){
+				foreach($value as $key0 => $value0) {
+					unset($param[$key][$key0]);
+				}
+			}
+			else{
+				unset($param[$value]);
+			}
+		}
+
+		$get_params = Datagrid::array_merge_recursive_distinct($param, $get_params);
+		ksort($get_params);
+		return action($controller, $parameters) . ($get_params ? '?' . http_build_query($get_params) : '');
+	}
+
+	public static function array_merge_recursive_distinct ( array &$array1, array &$array2 )	{
+		$merged = $array1;
+		foreach ( $array2 as $key => &$value ) {
+			if ( is_array ( $value ) && isset ( $merged [$key] ) && is_array ( $merged [$key] ) ) {
+				$merged [$key] = array_merge_recursive_distinct ( $merged [$key], $value );
+			}
+			else {
+				$merged [$key] = $value;
+			}
+		}
+		return $merged;
+	}
+
 }
