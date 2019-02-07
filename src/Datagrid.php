@@ -578,7 +578,6 @@ class Datagrid {
 	}
 
 	public static function currentUri($get_params = [], $unset_params = []) {
-		print_r($get_params);
 		$current_action = \Illuminate\Support\Facades\Route::current()->getAction();
 		$controller = '\\' . $current_action['controller'];
 		$parameters = \Illuminate\Support\Facades\Route::current()->parameters();
