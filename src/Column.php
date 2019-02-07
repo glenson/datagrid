@@ -84,7 +84,14 @@ class Column {
      *
      * @var array
      */
-    private $attributes = [];
+	private $attributes = [];
+	
+    /**
+     * Column html class
+     *
+     * @var array
+     */
+	private $class = '';
 
 	/**
 	 * Instance Column
@@ -373,13 +380,7 @@ class Column {
 	public function getFilterName() {
 		return 'f[' . $this->getKey() . ']' . ($this->hasFilterMany() ? '[]' : null);
 	}
-
-
-	/**
-	 * Get filter name
-	 *
-	 * @return string
-	 */
+	
 	public function getFilterNameById($id) {
 		return $id.'[' . $this->getKey() . ']' . ($this->hasFilterMany() ? '[]' : null);
 	}
@@ -492,5 +493,5 @@ class Column {
         }
 
         return trim($html);
-    }
+	}
 }
